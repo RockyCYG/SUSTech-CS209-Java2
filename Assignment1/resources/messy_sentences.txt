@@ -1,0 +1,8 @@
+Test normal sentences.
+tEst Sentence not beginning with upper case. test
+  sentence SPANNING
+multiple
+lines..
+	dummy sentence. test FULL STOP? test QUESTION MARK! test EXCLAMATION MARK.
+we don't consider ABBRS. we don't consider comma after full stops.,
+only. simple. cases. will. be. tested. 1234

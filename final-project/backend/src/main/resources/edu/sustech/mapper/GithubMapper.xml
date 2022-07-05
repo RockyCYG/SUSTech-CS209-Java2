@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="edu.sustech.mapper.GithubMapper">
+
+    <select id="selectTagAndWatchCount" resultType="edu.sustech.vo.CloudDataVO">
+        select tag as name, sum(watchers) as value
+        from repos r
+                 join repos_tags rt on r.id = rt.repo_id
+        group by tag
+        order by value desc
+        limit 500 offset 0;
+    </select>
+
+    <select id="selectReposByConditions" resultType="edu.sustech.entity.GithubRepository">
+        select id, title, watchers, forks, substr(created_time, 1, 7) as createdTime from repos r join (
+        <foreach collection="tagList" item="item" separator=" ">
+            select repo_id from repos_tags where tag ilike concat('%', #{item}, '%')
+            intersect
+        </foreach>
+        select repo_id from repos_tags where tag ilike '%%'
+        intersect
+        select repo_id from repos_tags where tag ilike '%%'
+        ) t
+        on r.id = t.repo_id
+        <where>
+            <if test="id != null">id = #{id}</if>
+            <if test="title != null and !title.isEmpty()">and title ilike concat('%', #{title}, '%')</if>
+            <if test="forkCount != null">and forks >= #{forkCount}</if>
+            <if test="watchCount != null">and watchers >= #{watchCount}</if>
+            <if test="createYear != null and !createYear.isEmpty()">and substr(created_time, 1, 7) ilike concat('%',
+                #{createYear}, '%')
+            </if>
+        </where>
+        <if test="sort == 0">order by ${column}</if>
+        <if test="sort == 1">order by ${column} desc</if>
+        limit #{pageSize} offset #{begin};
+    </select>
+
+    <select id="selectTotalCount" resultType="java.lang.Integer">
+        select count(*) from repos r join (
+        <foreach collection="tagList" item="item" separator=" ">
+            select repo_id from repos_tags where tag ilike concat('%', #{item}, '%')
+            intersect
+        </foreach>
+        select repo_id from repos_tags where tag ilike '%%'
+        intersect
+        select repo_id from repos_tags where tag ilike '%%'
+        ) t
+        on r.id = t.repo_id
+        <where>
+            <if test="id != null">id = #{id}</if>
+            <if test="title != null and !title.isEmpty()">and title ilike concat('%', #{title}, '%')</if>
+            <if test="forkCount != null">and forks >= #{forkCount}</if>
+            <if test="watchCount != null">and watchers >= #{watchCount}</if>
+            <if test="createYear != null and !createYear.isEmpty()">and substr(created_time, 1, 7) ilike concat('%',
+                #{createYear}, '%')
+            </if>
+        </where>
+        ;
+    </select>
+
+</mapper>

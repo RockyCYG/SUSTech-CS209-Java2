@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="edu.sustech.mapper.StackOverflowQuestionMapper">
+
+    <select id="selectQuestionsByConditions" resultType="edu.sustech.entity.StackOverflowQuestion">
+        select * from questions q join (
+        <foreach collection="tagList" item="item" separator=" ">
+            select question_id from question_tags where tag ilike concat('%', #{item}, '%')
+            intersect
+        </foreach>
+        select question_id from question_tags where tag ilike '%%'
+        intersect
+        select question_id from question_tags where tag ilike '%%'
+        ) t
+        on q.id = t.question_id
+        <where>
+            <if test="id != null">id = #{id}</if>
+            <if test="title != null and !title.isEmpty()">and title ilike concat('%', #{title}, '%')</if>
+            <if test="score != null">and score >= #{score}</if>
+            <if test="viewCount != null">and view_count >= #{viewCount}</if>
+            <if test="createYear != null">and create_year = #{createYear}</if>
+        </where>
+        <if test="sort == 0">order by ${column}</if>
+        <if test="sort == 1">order by ${column} desc</if>
+        limit #{size} offset #{begin};
+    </select>
+
+    <select id="selectTotalCount" resultType="java.lang.Integer">
+        select count(*) from questions q join (
+        <foreach collection="tagList" item="item" separator=" ">
+            select question_id from question_tags where tag ilike concat('%', #{item}, '%')
+            intersect
+        </foreach>
+        select question_id from question_tags where tag ilike '%%'
+        intersect
+        select question_id from question_tags where tag ilike '%%'
+        ) t
+        on q.id = t.question_id
+        <where>
+            <if test="id != null">id = #{id}</if>
+            <if test="title != null and !title.isEmpty()">and title ilike concat('%', #{title}, '%')</if>
+            <if test="score != null">and score >= #{score}</if>
+            <if test="viewCount != null">and view_count >= #{viewCount}</if>
+            <if test="createYear != null">and create_year = #{createYear}</if>
+        </where>
+        ;
+    </select>
+
+    <select id="selectAllTags" resultType="edu.sustech.vo.TagVO">
+        select tag as name, sum(score) as scoreCount, sum(view_count) as viewCount
+        from questions q
+                 join question_tags qt on q.id = qt.question_id
+        group by tag
+        order by scoreCount desc
+        limit 10 offset 1;
+
+    </select>
+
+    <select id="selectTagsAndViewCount" resultType="java.util.Map">
+        select tag, sum(view_count) as viewCount
+        from questions q
+                 join question_tags qt on q.id = qt.question_id
+        group by tag
+        order by viewCount desc
+        limit 500 offset 0;
+    </select>
+
+    <select id="selectTagsViewSum" resultType="java.util.Map">
+        select create_year, viewsum
+        from (select tag, create_year, sum(view_count) viewsum
+              from questions q
+                       join question_tags qt on q.id = qt.question_id
+              group by tag, create_year) t
+        where tag = #{tagName};
+    </select>
+
+    <select id="selectTagsOrderByViewCount" resultType="java.lang.String">
+        select tag
+        from (select tag, sum(view_count) viewCount
+              from questions q
+                       join question_tags qt on q.id = qt.question_id
+              group by tag
+              order by viewCount desc) t
+        limit 10 offset 1
+    </select>
+
+    <select id="selectTagsNum" resultType="java.util.Map">
+        select create_year, tagCount
+        from (select tag, create_year, count(*) tagCount
+              from questions q
+                       join question_tags qt on q.id = qt.question_id
+              group by tag, create_year) t
+        where tag = #{tagName};
+    </select>
+
+</mapper>
